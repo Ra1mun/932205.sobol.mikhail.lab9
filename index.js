@@ -1,59 +1,98 @@
-const itemsContainer = document.querySelector('.objects__items');
-const savedContainer = document.querySelector('.objects__saved');
-const addBtn = document.querySelector('.objects__add');
-const saveBtn = document.querySelector('.objects__save');
+const signs = ['+', '-', '*', '/'];
+const clearSign = 'C';
+const removeOneSymbolSign = '←';
+const equalSign = '=';
+const dotSign = '.';
 
-addBtn.addEventListener('click', () => {
-    const newObject = document.createElement('div');
+const btnsContainer = document.querySelector('.calculator__btns');
+const input = document.querySelector('.calculator__input input');
 
-    newObject.classList.add('objects__item');
-    newObject.innerHTML = `
-        <input type="text" class="objects__input">
-        <input type="text" class="objects__input">
-        <button type="button" class="objects__btn objects__up-btn">&uarr;</button>
-        <button type="button" class="objects__btn objects__down-btn">&darr;</button>
-        <button type="button" class="objects__btn objects__close-btn">&times;</button>
-    `;
-    newObject.querySelector('.objects__up-btn').addEventListener('click', moveObjectUp);
-    newObject.querySelector('.objects__down-btn').addEventListener('click', moveObjectDown);
-    newObject.querySelector('.objects__close-btn').addEventListener('click', removeObject);
+btnsContainer.addEventListener('click', ($event) => {
+    const el = $event.target;
+    const inputVal = input.value;
 
-    itemsContainer.append(newObject);
+    if (el.classList.contains('calculator__btn')) {
+        const newSymbol = el.textContent;
+
+        hasUnallowedSymbols(inputVal) ? input.value = '' : calc(inputVal, newSymbol);
+    }
 });
 
-saveBtn.addEventListener('click', () => {
-    const objectItems = document.querySelectorAll('.objects__item');
-    let savedObjects = '{';
-
-    objectItems.forEach((item) => {
-        const firstInputValue = item.querySelector('input:nth-child(1)').value;
-        const secondInputValue = item.querySelector('input:nth-child(2)').value;
-
-        savedObjects += `"${firstInputValue}":"${secondInputValue}",`;
-    });
-
-    savedObjects = savedObjects.slice(0, savedObjects.length - 1);
-    savedObjects += '}';
-
-    savedContainer.textContent = savedObjects;
-});
-
-const moveObjectUp = ($event) => {
-    const currentObj = $event.target.closest('.objects__item');
-    const prevObj = currentObj.previousElementSibling;
-    prevObj?.before(currentObj);
+const hasUnallowedSymbols = (inputVal) => {
+   return !((inputVal).match(/[0-9%\/*\-+=]/) || inputVal === '');
 };
 
-const moveObjectDown = ($event) => {
-    const currentObj = $event.target.closest('.objects__item');
-    const nextObj = currentObj.nextElementSibling;
-    nextObj?.after(currentObj);
+const calc = (inputVal, newSymbol) => {
+    if (newSymbol === equalSign) {
+        clickEqual(inputVal);
+    }
+    else if (newSymbol === removeOneSymbolSign) {
+        input.value = inputVal.substring(0, inputVal.length - 1);
+    }
+    else if (newSymbol === clearSign) {
+        input.value = '';
+    }
+    else if (newSymbol === dotSign) {
+        clickDot(inputVal);
+    }
+    else {
+        signs.includes(newSymbol) ? clickSign(inputVal, newSymbol) : input.value += newSymbol;
+    }
+}
+
+const clickEqual = (inputVal) => {
+    if (isLastSymbolSign(inputVal) || isLastSymbolDot(inputVal)) {
+        input.value = inputVal.substring(0, inputVal.length - 1);
+    }
+
+    input.value = eval(input.value);
 };
 
-const removeObject = ($event) => {
-    $event.target.closest('.objects__item').remove();
+const clickSign = (inputVal, newSymbol) => {
+    if (isFirstSymbolSign(inputVal) && newSymbol !== '-') {
+        input.value = input.value;
+    } else if (isLastSymbolSign(inputVal) || isLastSymbolDot(inputVal)) {
+        input.value = inputVal.substring(0, inputVal.length - 1) + newSymbol;
+    }
+    else {
+        input.value += newSymbol;
+    }
 };
 
-document.querySelector('.objects__up-btn').addEventListener('click', moveObjectUp);
-document.querySelector('.objects__down-btn').addEventListener('click', moveObjectDown);
-document.querySelector('.objects__close-btn').addEventListener('click', removeObject);
+const clickDot = (inputVal) => {
+    if (isLastSymbolSign(inputVal) || isLastSymbolDot(inputVal)) {
+        return;
+    }
+
+    let dotsCount = 0;
+
+    for (let i = inputVal.length - 1; i >= 0; i--) {
+        if (inputVal[i] === dotSign) {
+            dotsCount++;
+        }
+
+        if (signs.includes(inputVal[i])) {
+            break;
+        }
+    }
+
+    if (dotsCount !== 0) {
+        input.value = input.value;
+    } else {
+        input.value += dotSign;
+    }
+};
+
+const isFirstSymbolSign = (inputVal) => {
+    return inputVal.length === 0;
+};
+
+const isLastSymbolSign = (inputVal) => {
+    const lastSymbol = inputVal.slice(inputVal.length - 1, inputVal.length);
+    return signs.includes(lastSymbol);
+};
+
+const isLastSymbolDot = (inputVal) => {
+    const lastSymbol = inputVal.slice(inputVal.length - 1, inputVal.length);
+    return '.' === lastSymbol;
+};
